@@ -13,12 +13,18 @@ public class MarketPredictor {
   private static final double CONFIDENCE_INTERVAL = 1.5; // Standard deviations for worst/best cases
   private static final Random random = new Random();
 
+  /**
+   * Creates a new MarketPredictor.
+   */
   public MarketPredictor() {
     this.knownYears = new HashMap<>();
   }
 
   /**
    * Adds a known year's market data.
+   * 
+   * @param year the year
+   * @param data the market data
    */
   public void addKnownYear(int year, MarketYear data) {
     knownYears.put(year, data);
@@ -26,6 +32,8 @@ public class MarketPredictor {
 
   /**
    * Gets all known years.
+   * 
+   * @return map of years to market data
    */
   public Map<Integer, MarketYear> getKnownYears() {
     return new HashMap<>(knownYears);
@@ -33,6 +41,9 @@ public class MarketPredictor {
 
   /**
    * Checks if a year is known.
+   * 
+   * @param year the year to check
+   * @return true if year is known
    */
   public boolean hasYear(int year) {
     return knownYears.containsKey(year);
@@ -40,6 +51,9 @@ public class MarketPredictor {
 
   /**
    * Returns worst and best case scenarios for target year.
+   * 
+   * @param targetYear the year to predict
+   * @return prediction result with worst and best cases
    */
   public PredictionResult predictYear(int targetYear) {
     List<MarketYear> scenarios = predictYearRecursive(targetYear, new HashMap<>(knownYears));
@@ -65,8 +79,11 @@ public class MarketPredictor {
   }
 
   /**
-   * Recursive prediction that works backwards until finding known data,
-   * then forward with worst/best scenarios at each step.
+   * Recursive prediction that works backwards until finding known data.
+   * 
+   * @param targetYear the year to predict
+   * @param known      map of known years
+   * @return list of predicted scenarios
    */
   private List<MarketYear> predictYearRecursive(int targetYear, Map<Integer, MarketYear> known) {
     // Base case
@@ -91,7 +108,11 @@ public class MarketPredictor {
   }
 
   /**
-   * Predicts the next year from a given MarketYear using linear regression.
+   * Predicts the next year from a given MarketYear.
+   * 
+   * @param current   the current year data
+   * @param worstCase true for worst case, false for best case
+   * @return predicted next year
    */
   private MarketYear predictNextYear(MarketYear current, boolean worstCase) {
     List<MarketYear> history = getHistoricalData();
@@ -159,14 +180,11 @@ public class MarketPredictor {
 
   /**
    * Calculates trend using linear regression with confidence intervals.
-   * THE MOST IMPORTANT FUNCTION IN THE WHOLE PROJECT
-   * WE USED POPULAR YOUTUBE VIDEO TO HELP US WITH THIS
-   * https://www.youtube.com/watch?v=_CU4yOIRcJk
    * 
-   * https://www.baeldung.com/java-8-functional-interfaces
-   * https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html
-   * The extractor lets us reuse this function for different fields without
-   * writing separate code for each one.
+   * @param history   list of historical market years
+   * @param extractor function to extract value from MarketYear
+   * @param worstCase true for worst case, false for best case
+   * @return predicted change percentage
    */
   private double calculateTrend(List<MarketYear> history, java.util.function.Function<MarketYear, Double> extractor,
       boolean worstCase) {
@@ -222,6 +240,8 @@ public class MarketPredictor {
 
   /**
    * Gets historical data sorted by year.
+   * 
+   * @return sorted list of market years
    */
   private List<MarketYear> getHistoricalData() {
     List<Integer> years = new ArrayList<>(knownYears.keySet());
@@ -235,9 +255,9 @@ public class MarketPredictor {
   }
 
   /**
-   * Generates a random adjustment to add to the trend-based inflation prediction.
-   * Most common adjustment: +0.25%, maximum adjustment: ±1%.
-   * This adds realistic year-to-year variation while following the overall trend.
+   * Generates a random inflation adjustment.
+   * 
+   * @return adjustment value
    */
   private double generateInflationAdjustment() {
     double meanAdjustment = 0.25;
@@ -253,38 +273,74 @@ public class MarketPredictor {
     private final MarketYear bestCase;
     private final List<MarketYear> allScenarios;
 
+    /**
+     * Creates a prediction result with all scenarios.
+     * 
+     * @param worstCase    worst case scenario
+     * @param bestCase     best case scenario
+     * @param allScenarios all predicted scenarios
+     */
     public PredictionResult(MarketYear worstCase, MarketYear bestCase, List<MarketYear> allScenarios) {
       this.worstCase = worstCase;
       this.bestCase = bestCase;
       this.allScenarios = allScenarios;
     }
 
+    /**
+     * Creates a prediction result with worst and best cases.
+     * 
+     * @param worstCase worst case scenario
+     * @param bestCase  best case scenario
+     */
     public PredictionResult(MarketYear worstCase, MarketYear bestCase) {
       this.worstCase = worstCase;
       this.bestCase = bestCase;
       this.allScenarios = new ArrayList<>();
     }
 
+    /**
+     * Creates a prediction result with single scenario.
+     * 
+     * @param worstCase the scenario
+     */
     public PredictionResult(MarketYear worstCase) {
       this.worstCase = worstCase;
       this.bestCase = worstCase;
       this.allScenarios = new ArrayList<>();
     }
 
+    /**
+     * Creates an empty prediction result.
+     */
     public PredictionResult() {
       this.worstCase = new MarketYear();
       this.bestCase = new MarketYear();
       this.allScenarios = new ArrayList<>();
     }
 
+    /**
+     * Gets the worst case scenario.
+     * 
+     * @return worst case market year
+     */
     public MarketYear getWorstCase() {
       return worstCase;
     }
 
+    /**
+     * Gets the best case scenario.
+     * 
+     * @return best case market year
+     */
     public MarketYear getBestCase() {
       return bestCase;
     }
 
+    /**
+     * Gets all predicted scenarios.
+     * 
+     * @return list of all scenarios
+     */
     public List<MarketYear> getAllScenarios() {
       return allScenarios;
     }

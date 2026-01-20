@@ -6,11 +6,10 @@ public class CSVHandler {
     private static final String CSV_FILE = "market_data.csv";
 
     /**
-     * Loads market data from CSV file
-     *
-     * @param predictor The MarketPredictor to populate with data
-     * @param filename  The name of the CSV file to load
-     * @throws IOException if there's an error reading the file
+     * Loads market data from CSV file.
+     * @param predictor the predictor to populate
+     * @param filename the CSV filename
+     * @throws IOException if file error occurs
      */
     public static void loadFromCSV(MarketPredictor predictor, String filename) throws IOException {
         File file = new File(filename);
@@ -58,11 +57,9 @@ public class CSVHandler {
     }
 
     /**
-     * Loads market data from CSV file into the predictor.
-     * Default filename is "market_data.csv".
-     *
-     * @param predictor The MarketPredictor to populate with data
-     * @throws IOException if there's an error reading the file
+     * Loads market data from default CSV file.
+     * @param predictor the predictor to populate
+     * @throws IOException if file error occurs
      */
     public static void loadFromCSV(MarketPredictor predictor) throws IOException {
         loadFromCSV(predictor, CSV_FILE);

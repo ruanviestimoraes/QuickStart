@@ -8,6 +8,9 @@ public class Main {
     private static Scanner scanner = new Scanner(System.in);
     private static MarketPredictor predictor = new MarketPredictor();
 
+    /**
+     * Main entry point for the application.
+     */
     public static void main(String[] args) {
         System.out.println("========================================");
         System.out.println("   Housing Market Prediction System");
@@ -47,7 +50,9 @@ public class Main {
         scanner.close();
     }
 
-    // default mentu to print
+    /**
+     * Prints the main menu.
+     */
     private static void printMenu() {
         System.out.println("Main Menu:");
         System.out.println("1. Predict Future Year");
@@ -56,7 +61,9 @@ public class Main {
         System.out.print("\nEnter your choice: ");
     }
 
-    // predict year function
+    /**
+     * Predicts a future year and displays results.
+     */
     private static void predictYear() {
         System.out.println("\n=== Predict Future Year ===");
 
@@ -108,6 +115,9 @@ public class Main {
         }
     }
 
+    /**
+     * Lists all known years and their data.
+     */
     private static void listKnownYears() {
         System.out.println("\n=== Known Years ===");
 
