@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Erik Petrosyan, Ruan Viesti Moares
 package culminating;
 
 import java.util.*;
