@@ -10,7 +10,7 @@ import java.util.Random;
  */
 public class MarketPredictor {
   private Map<Integer, MarketYear> knownYears;
-  private static final double CONFIDENCE_INTERVAL = 1.5; // Standard deviations for worst/best cases
+  private static final double CONFIDENCE_INTERVAL = 0.3; // Standard deviations for worst/best cases
   private static final Random random = new Random();
 
   /**
@@ -117,9 +117,9 @@ public class MarketPredictor {
   private MarketYear predictNextYear(MarketYear current, boolean worstCase) {
     List<MarketYear> history = getHistoricalData();
 
-    // Calculate trends for each field using linear regression
-    double mortgageRateChange = calculateTrend(history, m -> m.getMortgageRate(), worstCase);
-    double unemploymentChange = calculateTrend(history, m -> m.getUnemploymentRate(), worstCase);
+    // Calculate trends (percent changes) per field
+    double mortgageRateChange = clampChange(calculateTrend(history, m -> m.getMortgageRate(), worstCase), 1.5);
+    double unemploymentChange = clampChange(calculateTrend(history, m -> m.getUnemploymentRate(), worstCase), 1.8);
     double gdpChange = calculateTrend(history, m -> m.getGdp(), worstCase);
     double inflationRateChange = calculateTrend(history, m -> m.getInflationRate(), worstCase);
     double avgPriceChange = calculateTrend(history, m -> m.getAveragePrice(), worstCase);
@@ -128,11 +128,25 @@ public class MarketPredictor {
     double newListingsChange = calculateTrend(history, m -> (double) m.getNewListings(), worstCase);
     double domChange = calculateTrend(history, m -> m.getDom(), worstCase);
 
-    // Generate new inflation rate: trend-based prediction + random adjustment
-    double trendBasedInflation = current.getInflationRate() + inflationRateChange;
-    double randomAdjustment = generateInflationAdjustment();
-    double newInflationRate = trendBasedInflation + randomAdjustment;
-    newInflationRate = Math.max(0, Math.min(6, newInflationRate));
+    // Enforce direction for "lower is better" metrics: worst goes up, best goes
+    // down
+    if (worstCase) {
+      mortgageRateChange = Math.max(Math.abs(mortgageRateChange), 0.25);
+      unemploymentChange = Math.max(Math.abs(unemploymentChange), 0.25);
+      domChange = Math.max(Math.abs(domChange), 1.0);
+    } else {
+      mortgageRateChange = -Math.max(Math.abs(mortgageRateChange), 0.25);
+      unemploymentChange = -Math.max(Math.abs(unemploymentChange), 0.25);
+      domChange = -Math.max(Math.abs(domChange), 0.6);
+    }
+
+    // Generate new inflation rate with clearer worst/best direction
+    double trendBasedInflation = current.getInflationRate() * (1.0 + inflationRateChange / 100.0);
+    double inflationNudge = Math.abs(generateInflationAdjustment() * 0.6) + 0.15;
+    double newInflationRate = worstCase
+        ? trendBasedInflation + inflationNudge
+        : trendBasedInflation - inflationNudge;
+    newInflationRate = Math.max(0.8, Math.min(5.0, newInflationRate));
 
     // So basically, here we using the worst case scenario boolean to predict the
     // next year's prices
@@ -142,13 +156,13 @@ public class MarketPredictor {
     double inflationImpact = newInflationRate / 100.0; // Convert percentage to decimal
 
     if (worstCase) {
-      priceAdjustment -= (mortgageRateChange / 100.0) * 0.1; // 10% impact per 1% change
-      priceAdjustment -= (unemploymentChange / 100.0) * 0.15; // 15% impact per 1% change
-      priceAdjustment += inflationImpact * 0.8;
+      priceAdjustment -= (mortgageRateChange / 100.0) * 0.04;
+      priceAdjustment -= (unemploymentChange / 100.0) * 0.06;
+      priceAdjustment += inflationImpact * 0.4;
     } else {
-      priceAdjustment += Math.abs(mortgageRateChange / 100.0) * 0.05;
-      priceAdjustment += Math.abs(unemploymentChange / 100.0) * 0.05;
-      priceAdjustment += inflationImpact * 1.2;
+      priceAdjustment += Math.abs(mortgageRateChange / 100.0) * 0.03;
+      priceAdjustment += Math.abs(unemploymentChange / 100.0) * 0.03;
+      priceAdjustment += inflationImpact * 0.5;
     }
 
     // Create predicted year with the adjusted values
@@ -232,10 +246,24 @@ public class MarketPredictor {
     // Otherwise just return the raw change
     double avgValue = sumY / n;
     if (avgValue != 0) {
-      return (predictedChange + adjustment) / avgValue * 100.0;
+      double predictedPct = (predictedChange / avgValue) * 100.0;
+      double adjPct = (adjustment / avgValue) * 100.0;
+      // Damp swings so scenarios stay near recent history
+      double combined = predictedPct * 0.4 + adjPct * 0.4;
+      // Cap to avoid runaway values
+      if (combined > 10)
+        combined = 10;
+      if (combined < -10)
+        combined = -10;
+      return combined;
     }
 
-    return predictedChange + adjustment;
+    double combined = predictedChange + adjustment;
+    if (combined > 10)
+      combined = 10;
+    if (combined < -10)
+      combined = -10;
+    return combined;
   }
 
   /**
