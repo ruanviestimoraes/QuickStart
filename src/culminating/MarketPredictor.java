@@ -10,7 +10,7 @@ import java.util.Random;
  */
 public class MarketPredictor {
   private Map<Integer, MarketYear> knownYears;
-  private static final double CONFIDENCE_INTERVAL = 0.3; // Standard deviations for worst/best cases
+  private static final double CONFIDENCE_INTERVAL = 0.6; // Standard deviations for worst/best cases
   private static final Random random = new Random();
 
   /**
@@ -118,8 +118,8 @@ public class MarketPredictor {
     List<MarketYear> history = getHistoricalData();
 
     // Calculate trends (percent changes) per field
-    double mortgageRateChange = clampChange(calculateTrend(history, m -> m.getMortgageRate(), worstCase), 1.5);
-    double unemploymentChange = clampChange(calculateTrend(history, m -> m.getUnemploymentRate(), worstCase), 1.8);
+    double mortgageRateChange = clampChange(calculateTrend(history, m -> m.getMortgageRate(), worstCase), 0.5);
+    double unemploymentChange = clampChange(calculateTrend(history, m -> m.getUnemploymentRate(), worstCase), 0.7);
     double gdpChange = calculateTrend(history, m -> m.getGdp(), worstCase);
     double inflationRateChange = calculateTrend(history, m -> m.getInflationRate(), worstCase);
     double avgPriceChange = calculateTrend(history, m -> m.getAveragePrice(), worstCase);
@@ -280,6 +280,22 @@ public class MarketPredictor {
       history.add(knownYears.get(year));
     }
     return history;
+  }
+
+  /**
+   * Clamps a percentage change to a maximum absolute value.
+   * 
+   * @param change percent change
+   * @param maxAbs maximum absolute percent
+   * @return clamped change
+   */
+  private double clampChange(double change, double maxAbs) {
+    double cap = Math.max(0, maxAbs);
+    if (change > cap)
+      return cap;
+    if (change < -cap)
+      return -cap;
+    return change;
   }
 
   /**
